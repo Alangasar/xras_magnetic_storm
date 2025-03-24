@@ -33,7 +33,25 @@ class MagneticStormSensor(SensorEntity):
 
     @property
     def state(self):
-        return self._state
+        try:
+            value = float(self._state) if self._state is not None else None
+            if value is not None and 0 <= value <= 9:
+                return value
+            return None  # Если значение вне диапазона, сбрасываем его
+        except ValueError:
+            return None
+
+    @property
+    def native_unit_of_measurement(self):
+        return "Kp"
+
+    @property
+    def device_class(self):
+        return None  # Нет подходящего класса
+
+    @property
+    def state_class(self):
+        return "measurement"
 
     @property
     def unique_id(self):
