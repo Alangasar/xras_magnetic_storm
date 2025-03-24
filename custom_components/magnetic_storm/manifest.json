@@ -1,0 +1,11 @@
+{
+  "domain": "magnetic_storm",
+  "name": "Xras Magnetic Storm",
+  "version": "1.0",
+  "documentation": "https://github.com/Alangasar/xras_magnetic_storm",
+  "dependencies": [],
+  "codeowners": ["@Alangasar"],
+  "requirements": ["aiohttp"],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
