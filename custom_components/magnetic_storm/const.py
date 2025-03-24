@@ -1,6 +1,6 @@
 DOMAIN = "magnetic_storm"
 BASE_URL = "https://xras.ru/txt/kp_{city_key}.json"
-ISSUE_URL = "https://github.com/alangsar/myschoolcard/issues"
+ISSUE_URL = "https://github.com/Alangsar/xras_magnetic_storm/issues"
 
 CITIES = {
     "QYPM": "Абакан",
