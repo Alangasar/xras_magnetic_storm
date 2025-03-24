@@ -54,6 +54,24 @@ class MagneticStormSensor(SensorEntity):
         return "measurement"
 
     @property
+    def icon(self):
+        """Динамическая иконка в зависимости от уровня Kp-индекса."""
+        if self._state is None:
+            return "mdi:earth"
+        try:
+            kp = float(self._state)
+            if kp < 3:
+                return "mdi:earth"  # Спокойная геомагнитная обстановка
+            elif 3 <= kp < 5:
+                return "mdi:weather-cloudy-alert"  # Умеренная активность
+            elif 5 <= kp < 7:
+                return "mdi:weather-lightning"  # Геомагнитная буря
+            else:
+                return "mdi:shield-alert"  # Экстремальный шторм
+        except ValueError:
+            return "mdi:earth"
+
+    @property
     def unique_id(self):
         return f"magnetic_storm_{self._city_key}_{self._type}"
 
