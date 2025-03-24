@@ -26,7 +26,7 @@ async def async_setup(hass, config_entry):
 
 async def async_setup_entry(hass, config_entry):
     config_entry.add_update_listener(update_listener)
-    await hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+    await hass.config_entries.async_forward_entry_setups(config_entry, ["sensor"])
     return True
 
 
@@ -44,4 +44,4 @@ async def update_listener(hass, entry):
     """Update listener."""
     entry.data = entry.options
     await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    await hass.config_entries.async_forward_entry_setup(entry, "sensor")
+    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
