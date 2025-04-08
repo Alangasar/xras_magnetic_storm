@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from homeassistant.helpers.entity import Entity
 from homeassistant.components.sensor import SensorEntity
-from .const import DOMAIN, BASE_URL, CITIES
+from .const import DOMAIN, BASE_URL, CITIES, FORECAST_URL
 import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,7 +15,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = [
         MagneticStormSensor(city_key, "today", 0),
         MagneticStormSensor(city_key, "yesterday", 1),
-        MagneticStormSensor(city_key, "before_yesterday", 2)
+        MagneticStormSensor(city_key, "before_yesterday", 2),
+
+        MagneticStormSensor(city_key, "forecast_today", 2),
+        MagneticStormSensor(city_key, "forecast_tomorrow", 1),
+        MagneticStormSensor(city_key, "forecast_after_tomorrow", 0),
     ]
     async_add_entities(sensors, update_before_add=True)  # Обновляем данные перед добавлением
 
@@ -82,7 +86,9 @@ class MagneticStormSensor(SensorEntity):
     async def async_update(self):
         """Fetch new state data for the sensor."""
         try:
-            url = BASE_URL.format(city_key=self._city_key)
+            is_forecast = self._type.startswith("forecast_")
+            url = FORECAST_URL.format(city_key=self._city_key) if is_forecast else BASE_URL.format(city_key=self._city_key)
+
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=10) as response:
                     data = await response.json()
@@ -93,35 +99,28 @@ class MagneticStormSensor(SensorEntity):
                         self._attrs = {"error": "Data not available"}
                         return
 
-                    # Получение данных для текущего сенсора
                     sensor_data = data["data"][self._data_index]
 
-                    _LOGGER.info("Xras Ready!")
-                    _LOGGER.info(self._type)
-                    # Поиск последнего заполненного значения для сенсора "today"
+                    _LOGGER.debug("Updating sensor: %s", self._type)
+
                     if self._type == "today":
+                        # Поиск последнего заполненного значения для сенсора "today"
                         last_value = None
                         for key in ["h22", "h19", "h16", "h13", "h10", "h07", "h04", "h01", "h00"]:
                             value = sensor_data.get(key, "null")
                             if value != "null":
-                                last_value = value.lstrip("-")  # Удаляем минус, если он есть
+                                last_value = value.lstrip("-")
                                 break
 
-                        # Если найдено значение, используем его
-                        if last_value:
-                            self._state = last_value
-                        else:
-                            # Иначе используем значение по умолчанию
-                            self._state = None
+                        self._state = last_value if last_value else None
                     else:
-                        # Для других сенсоров используем max_kp
+                        # Для остальных сенсоров используем max_kp
                         self._state = sensor_data.get("max_kp", None)
 
-                    # Добавление атрибутов
+                    # Формируем атрибуты
                     self._attrs = {
                         "time": sensor_data.get("time", "Unknown"),
                         "f10": sensor_data.get("f10", "Unknown"),
-                        "sn": sensor_data.get("sn", "Unknown"),
                         "ap": sensor_data.get("ap", "Unknown"),
                         "h00": sensor_data.get("h00", "Unknown"),
                         "h01": sensor_data.get("h01", "Unknown"),
@@ -133,6 +132,16 @@ class MagneticStormSensor(SensorEntity):
                         "h19": sensor_data.get("h19", "Unknown"),
                         "h22": sensor_data.get("h22", "Unknown")
                     }
+
+                    if is_forecast:
+                        self._attrs.update({
+                            "p4": sensor_data.get("p4", "Unknown"),
+                            "p5": sensor_data.get("p5", "Unknown"),
+                            "p6": sensor_data.get("p6", "Unknown"),
+                            "p7": sensor_data.get("p7", "Unknown"),
+                        })
+                    else:
+                        self._attrs["sn"] = sensor_data.get("sn", "Unknown")
 
         except Exception as e:
             _LOGGER.error(f"Error updating sensor: {e}")
