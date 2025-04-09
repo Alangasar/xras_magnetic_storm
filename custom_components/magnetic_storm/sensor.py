@@ -91,12 +91,18 @@ class MagneticStormSensor(SensorEntity):
 
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=10) as response:
-                    data = await response.json()
+                    try:
+                        data = await response.json()
+                    except Exception as e:
+                        _LOGGER.warning(f"Failed to parse JSON from {url}: {e}")
+                        return
 
-                    # Проверка наличия данных
-                    if "data" not in data or len(data["data"]) <= self._data_index:
-                        self._state = "No data"
-                        self._attrs = {"error": "Data not available"}
+                    if not isinstance(data, dict) or "data" not in data:
+                        _LOGGER.warning(f"Invalid or empty response for {url}")
+                        return
+
+                    if not isinstance(data["data"], list) or len(data["data"]) <= self._data_index:
+                        _LOGGER.warning(f"Not enough data for index {self._data_index} in response")
                         return
 
                     sensor_data = data["data"][self._data_index]
