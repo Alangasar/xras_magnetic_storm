@@ -14,9 +14,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     city_key = config_entry.data["city"]
     sensors = [
         MagneticStormSensor(city_key, "today", 0),
-        MagneticStormSensor(city_key, "yesterday", 1),
-        MagneticStormSensor(city_key, "before_yesterday", 2),
-
         MagneticStormSensor(city_key, "forecast_today", 2),
         MagneticStormSensor(city_key, "forecast_tomorrow", 1),
         MagneticStormSensor(city_key, "forecast_after_tomorrow", 0),
@@ -64,11 +61,11 @@ class MagneticStormSensor(SensorEntity):
             return "mdi:earth"
         try:
             kp = float(self._state)
-            if kp < 3:
+            if kp < 4:
                 return "mdi:earth"  # Спокойная геомагнитная обстановка
-            elif 3 <= kp < 5:
+            elif 4 <= kp <= 5:
                 return "mdi:weather-cloudy-alert"  # Умеренная активность
-            elif 5 <= kp < 7:
+            elif 5 < kp <= 7:
                 return "mdi:weather-lightning"  # Геомагнитная буря
             else:
                 return "mdi:shield-alert"  # Экстремальный шторм
