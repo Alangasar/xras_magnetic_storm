@@ -123,20 +123,21 @@ class MagneticStormSensor(SensorEntity):
                         # Для остальных сенсоров используем max_kp
                         self._state = sensor_data.get("max_kp", None)
 
-                    # Формируем атрибуты
+                    # Формируем почасовые атрибуты только из существующих в sensor_data
+                    hourly_attrs = {}
+                    for hour in range(24):
+                        key = f"h{hour:02d}"
+                        if key in sensor_data:
+                            value = sensor_data[key]
+                            if value != "null":
+                                hourly_attrs[key] = value
+
+                    # Основные атрибуты
                     self._attrs = {
                         "time": sensor_data.get("time", "Unknown"),
                         "f10": sensor_data.get("f10", "Unknown"),
                         "ap": sensor_data.get("ap", "Unknown"),
-                        "h00": sensor_data.get("h00", "Unknown"),
-                        "h01": sensor_data.get("h01", "Unknown"),
-                        "h04": sensor_data.get("h04", "Unknown"),
-                        "h07": sensor_data.get("h07", "Unknown"),
-                        "h10": sensor_data.get("h10", "Unknown"),
-                        "h13": sensor_data.get("h13", "Unknown"),
-                        "h16": sensor_data.get("h16", "Unknown"),
-                        "h19": sensor_data.get("h19", "Unknown"),
-                        "h22": sensor_data.get("h22", "Unknown")
+                        **hourly_attrs
                     }
 
                     if is_forecast:
