@@ -7,9 +7,9 @@
 Интеграция добавляет 4 сенсора в Home Assistant:
 
 - `sensor.magnetic_storm_<город>_today` — текущая магнитная обстановка
-- `sensor.magnetic_storm_<город>_forecast_today` — прогноз на завтра
-- `sensor.magnetic_storm_<город>_forecast_tomorrow` — прогноз на послезавтра
-- `sensor.magnetic_storm_<город>_forecast_after_tomorrow` — прогноз на четвертый день
+- `sensor.magnetic_storm_<город>_forecast_today` — прогноз на сегодня
+- `sensor.magnetic_storm_<город>_forecast_tomorrow` — прогноз на завтра
+- `sensor.magnetic_storm_<город>_forecast_after_tomorrow` — прогноз на послезавтра
 
 ## Значение сенсора (Kp-индекс)
 
