@@ -109,7 +109,8 @@ class MagneticStormSensor(SensorEntity):
                     if self._type == "today":
                         # Поиск последнего заполненного значения для сенсора "today"
                         last_value = None
-                        for key in ["h22", "h19", "h16", "h13", "h10", "h07", "h04", "h01", "h00"]:
+                        for hour in reversed(range(24)):  # h23, h22, ..., h00
+                            key = f"h{hour:02d}"
                             value = sensor_data.get(key, "null")
                             if value != "null":
                                 last_value = value.lstrip("-")
