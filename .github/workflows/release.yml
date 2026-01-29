@@ -19,35 +19,41 @@ jobs:
 
       - name: Update version and Retag
         run: |
-          # 1. Извлекаем версию и очищаем её от лишних символов (на всякий случай)
+          # 1. Извлекаем версию
           RAW_VERSION=${GITHUB_REF_NAME#v}
           VERSION=$(echo "$RAW_VERSION" | tr -d '[:space:]')
           echo "Чистая версия: $VERSION"
           
-          # 2. Путь к файлу
-          FILE="custom_components/magnetic_storm/manifest.json"
+          # 2. ищем manifest.json в папке custom_components
+          FILE=$(find custom_components -name "manifest.json" | head -n 1)
           
-          # Ищем "version": "любые символы кроме кавычек"
+          if [ -z "$FILE" ]; then
+            echo "Ошибка: manifest.json не найден!"
+            exit 1
+          fi
+          echo "Найден файл по пути: $FILE"
+          
+          # 3. Прицельная замена
           sed -i "s|\"version\":\s*\"[^\"]*\"|\"version\": \"$VERSION\"|g" "$FILE"
           
-          # Проверка результата в логах
-          echo "Проверка манифеста:"
+          # 4. Проверка результата
           grep '"version":' "$FILE"
 
-          # 4. Git config
+          # 5. Git config
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 5. Фиксация изменений
+          # 6. Фиксация (используем найденную переменную $FILE)
           git add "$FILE"
           
           if git diff --staged --quiet; then
             echo "Изменений нет."
           else
-            git commit -m "chore: bump version to $VERSION"
+            # Добавляем [skip ci], чтобы не мучить GitHub лишними проверками
+            git commit -m "chore: bump version to $VERSION [skip ci]"
             git push origin HEAD:main
             
-            # Переставляем тег, чтобы архив релиза обновился
+            # Переставляем тег
             git tag -f ${{ github.ref_name }}
             git push -f origin ${{ github.ref_name }}
           fi
