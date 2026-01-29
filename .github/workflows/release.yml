@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Важно: используем токен для возможности пуша обратно
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        run: |
+          # Убираем 'v' из названия тега (v1.1.7 -> 1.1.7)
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Update manifest.json version
+        run: |
+          # Используем регулярное выражение, которое учитывает отступы и кавычки
+          sed -i 's/"version": "[^"]*"/"version": "'${{ env.VERSION }}'"/' manifest.json
+
+      - name: Commit and push updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Проверяем, есть ли изменения, чтобы не упасть с ошибкой
+          git add manifest.json
+          if git diff --staged --quiet; then
+            echo "No changes to manifest.json"
+          else
+            git commit -m "chore: bump version to ${{ env.VERSION }} [skip ci]"
+            # Пушим в основную ветку
+            git push origin HEAD:main
+          fi
