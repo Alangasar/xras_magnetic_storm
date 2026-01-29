@@ -12,33 +12,49 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          # Важно: используем токен для возможности пуша обратно
           fetch-depth: 0
 
-      - name: Extract version from tag
+      - name: Update version and Retag
         run: |
-          # Убираем 'v' из названия тега (v1.1.7 -> 1.1.7)
-          VERSION=${GITHUB_REF_NAME#v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # 1. Извлекаем версию и очищаем её от лишних символов (на всякий случай)
+          RAW_VERSION=${GITHUB_REF_NAME#v}
+          VERSION=$(echo "$RAW_VERSION" | tr -d '[:space:]')
+          echo "Чистая версия: $VERSION"
+          
+          # 2. Путь к файлу
+          FILE="custom_components/magnetic_storm/manifest.json"
+          
+          # Ищем "version": "любые символы кроме кавычек"
+          sed -i "s|\"version\":\s*\"[^\"]*\"|\"version\": \"$VERSION\"|g" "$FILE"
+          
+          # Проверка результата в логах
+          echo "Проверка манифеста:"
+          grep '"version":' "$FILE"
 
-      - name: Update manifest.json version
-        run: |
-          # Используем регулярное выражение, которое учитывает отступы и кавычки
-          sed -i 's/"version": "[^"]*"/"version": "'${{ env.VERSION }}'"/' manifest.json
-
-      - name: Commit and push updated manifest
-        run: |
+          # 4. Git config
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Проверяем, есть ли изменения, чтобы не упасть с ошибкой
-          git add manifest.json
+          # 5. Фиксация изменений
+          git add "$FILE"
+          
           if git diff --staged --quiet; then
-            echo "No changes to manifest.json"
+            echo "Изменений нет."
           else
-            git commit -m "chore: bump version to ${{ env.VERSION }} [skip ci]"
-            # Пушим в основную ветку
+            git commit -m "chore: bump version to $VERSION"
             git push origin HEAD:main
+            
+            # Переставляем тег, чтобы архив релиза обновился
+            git tag -f ${{ github.ref_name }}
+            git push -f origin ${{ github.ref_name }}
           fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
